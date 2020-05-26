@@ -1,5 +1,32 @@
 # The Database Structure
-*Note*: This document will evolve as the project grows. 
+*Note*: This document will evolve as the project grows.
+---
+### Cornell API
+
+Before be begin discussing the structure of the database, it is important to understand
+how the data which Cornell's Roster API provides us looks like.
+
+Each "class" object returned by the API has certain attributes which are of interest to us:
+- `strm`: seems to enocde the roster year and term (ie. SP19). 
+- `crseId`: the unique identifier for the course. This identifier is common across crosslisted courses (ie. CS 1710 and 
+COGST 1101 are the same course, and have the same `crseId`).
+- `subject`: the subject category to which this class belongs (ie. CS, PHIL, or MATH). 
+A single class may be crosslisted under multiple `subject`s.  
+- `catalogNbr`: the usually 4-digit catalog number which comes after the `subject` in the name (ie. CS **2110**, or ECE **2720**).
+A single class may be crosslisted under multiple `subject`s, and the corresponding `catalogNbr` for each subject's listing
+will not necessarily be the same (ie. CS **1710** and COGST **1101** are the same class). 
+- `titleShort`: a short title for the class. 
+- `catalogBreadth`: any breadth requirements the class fulfills (ie. HA-AS).
+- `catalogDistr`: any distribution requirements the class fulfills (ie. MQR-AS). 
+- `catalogLang`: ???
+- `catalogWhenOffered`: the semsters when the course is offered (ie. spring, fall). 
+- `catalogPrereqCoreq`: a string explaination of the class' pre/co-requisistes. Individual courses must be parsed out manually. 
+- `catalogSatisfiesReq`: ???
+- `acadCareer`: whether the course is for undergraduates, graduates, etc. 
+- `acadGroup`: divides courses among the different schools (Arts, Engineering). A single course may 
+fall under multiple academic groups. 
+
+
 
 The database instance is a single Sqlite3 file, labeled `db.sqlite`. 
 
