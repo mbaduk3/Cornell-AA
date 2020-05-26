@@ -8,6 +8,7 @@ var indexRouter = require('./routes/index');
 var classesRouter = require('./routes/classes');
 var testAPIRouter = require('./routes/testApi');
 var reqsRouter = require('./routes/reqs');
+var refetchRouter = require('./routes/refetch');
 
 var app = express();
 
@@ -25,6 +26,7 @@ app.use('/', indexRouter);
 app.use('/classes', classesRouter);
 app.use('/testApi', testAPIRouter);
 app.use('/reqs', reqsRouter);
+app.use('/refetch', refetchRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

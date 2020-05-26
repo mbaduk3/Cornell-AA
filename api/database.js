@@ -4,8 +4,10 @@
 */
 
 var sqlite3 = require('sqlite3').verbose()
+const https = require('https')
 
 const DBSOURCE = "db.sqlite"
+const rosterHost = "https://classes.cornell.edu"
 
 let db = new sqlite3.Database(DBSOURCE, (err) => {
     if (err) {
@@ -49,5 +51,36 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
     }
 });
 
+/* Example of populating all FA14 Math classes to our db. */
+const refetch = () => {
+    https.get(rosterHost + "/api/2.0/search/classes.json?roster=FA14&subject=MATH", (res) => {
+        let data = '';
+        var resJson = null;
+        res.on('data', (chunk) => {
+            data += chunk;
+        })
+        res.on('end', () => {
+            resJson = JSON.parse(data);
+            //console.log(resJson.data.classes[0]);
+            for (var i = 0; i < 3; i++) { // Only input 3 classes as example
+                inputClass(resJson.data.classes[i]);
+            }
+        })
+        
+    }).on("error", (err) => console.error(err));
+}
 
-module.exports = db
+const inputClass = (cls) => {
+    var sql = `INSERT INTO class (
+                name, course_number, req_id
+               ) VALUES (
+                   ?, ?, 1
+               )`
+    db.run(sql, [cls.titleShort, cls.crseId], function(err) {
+        if (err) { return console.log(err)}
+        console.log(`Row added with rowId: ${this.lastId}`)
+    });
+}
+
+
+module.exports = {refetch: refetch, db: db}
