@@ -15,8 +15,7 @@ const rosterHost = "https://classes.cornell.edu"
     already exist, and generates empty tables. 
 */
 let db = new sqlite3.Database(DBSOURCE, (err) => {
-    if (err) {
-      // Cannot open database
+    if (err) { // Cannot open database
       console.error(err.message)
       throw err
     } else {
@@ -39,7 +38,7 @@ const createTableClassSQL =
 // SQL: Creates a `req` table.
 const createTableReqSQL = 
     `CREATE TABLE IF NOT EXISTS req (
-        req_id INTEGER PRIMARY KEY NOT NULL, 
+        req_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
         code TEXT NOT NULL
     )` 
 
@@ -71,16 +70,39 @@ const refetch = () => {
     }).on("error", (err) => console.error(err));
 }
 
-const inputClass = (cls, reqs) => {
-    var sql = `INSERT INTO class (
-                name, course_number, req_id
-               ) VALUES (
-                   ?, ?, 1
-               )`
-    db.run(sql, [cls.titleShort, cls.crseId], function(err) {
-        if (err) { return console.log(err)}
-        console.log(`Row added with rowId: ${this.lastId}`)
-    });
+/*
+    Given a class object returned by Cornell Roster API, input the class into 
+    our database. 
+    [db] - the database connection object.
+    [cls] - the class object returned by Cornell Roster API. 
+    [reqs] - a list of additional requirements that this class satisfies (this 
+        is for the requirements we defined, not Cornell).
+    Requires: all requirements are already defined in `req` table. 
+    Throws an error if the class with given [crseId] already exists in db. 
+*/
+const inputClass = (db, cls, reqs) => {
+    let insertClassSQL = `INSERT INTO class (course_id, name) VALUES (?, ?)`
+    let insertClassVals = [cls.crseId, cls.titleShort]
+    let courseId = db.run(insertClassSQL, insertClassVals, function(err) {
+        if (err) { throw err }
+        return this.lastID;
+    })
+    let reqLst = [
+        cls.catalogBreadth, 
+        cls.catalogDistr,
+        ...reqs
+    ]
+    reqLst.forEach(req => {
+        let reqSQL = `SELECT (req_id) FROM req WHERE code = ?`
+        let reqId = db.get(reqSQL, [req], (err, row) => {
+            if (err) { return console.log(err) }
+            return row ? row.req_id : console.log("error: no such req with code: " + req);
+        })
+        let insertClassReqSQL = `INSERT INTO class_req (course_id, req_id) VALUES (?, ?)`
+        db.run(insertClassReqSQL, [courseId, reqId], (err) => {
+            if (err) { throw err }
+        })
+    })
 }
 
 
