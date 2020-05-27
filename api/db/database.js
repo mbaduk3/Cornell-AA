@@ -6,7 +6,7 @@
 var sqlite3 = require('sqlite3').verbose()
 const https = require('https')
 
-const DBSOURCE = "db.sqlite"
+const DBSOURCE = "../api/db/db.sqlite"
 const rosterHost = "https://classes.cornell.edu"
 
 
@@ -19,6 +19,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
       console.error(err.message)
       throw err
     } else {
+        db.get("PRAGMA foreign_keys = ON")
         console.log('Connected to the SQLite database.')
         db.serialize(() => {
             db.run(createTableClassSQL, err => err ? console.log(err) : null)
@@ -47,7 +48,11 @@ const createTableClassReqSQL =
     `CREATE TABLE IF NOT EXISTS class_req (
         course_id INTEGER NOT NULL, 
         req_id INTEGER NOT NULL, 
-        PRIMARY KEY (course_id, req_id)
+        PRIMARY KEY (course_id, req_id),
+        FOREIGN KEY (course_id) REFERENCES class(course_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (req_id) REFERENCES req(req_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
     )` 
 
 
