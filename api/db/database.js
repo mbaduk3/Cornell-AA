@@ -80,6 +80,10 @@ const populateDb = async () => {
     })
 }
 
+// The initialized db connection. 
+// Await this promise to use initialized db. 
+const gConn = populateDb();
+
 
 /* Example of populating all FA14 Math classes to our db. */
 const refetch = () => {
@@ -111,34 +115,38 @@ const refetch = () => {
     Throws an error if the class with given [crseId] already exists in db. 
 */
 const inputClass = async (cls, reqs) => {
-    var conn = await openDb; // Wait till db initialized.  
+    conn = await gConn // Wait until db initialized. 
     let insertClassSQL = `INSERT INTO class (course_id, name) VALUES (?, ?)`
     let insertClassVals = [cls.crseId, cls.titleShort]
     conn.run(insertClassSQL, insertClassVals, function (err) {
         if (err) { throw err }
         console.log(`inserted class ${cls.titleShort}, id=${this.lastID}`);
         insertReqs(this.lastID);
+        return conn;
     })
     let reqLst = [
         cls.catalogBreadth,
         cls.catalogDistr,
         ...reqs
     ]
-    const insertReqs = (courseId) => {
-        reqLst.forEach(req => {
-            let reqSQL = `SELECT (req_id) FROM req WHERE code = (?)`
-            conn.get(reqSQL, [req], (err, row) => {
-                if (err) { throw err }
-                if (row) {
-                    let insertClassReqSQL = `INSERT INTO class_req (course_id, req_id) VALUES (?, ?)`
-                    conn.serialize(() => {
-                        conn.run(insertClassReqSQL, [courseId, row.req_id], (err) => {
-                            if (err) { throw err }
-                        })
-                    });
-                } else console.log("error: no such req with code: " + req);
-            });
-        })
+    const insertReqs = async (courseId) => {
+        return new Promise((res, rej) => {
+            reqLst.forEach(req => {
+                let reqSQL = `SELECT (req_id) FROM req WHERE code = (?)`
+                conn.get(reqSQL, [req], (err, row) => {
+                    if (err) { throw err }
+                    if (row) {
+                        let insertClassReqSQL = `INSERT INTO class_req (course_id, req_id) VALUES (?, ?)`
+                        conn.serialize(() => {
+                            conn.run(insertClassReqSQL, [courseId, row.req_id], (err) => {
+                                if (err) { throw err }
+                            })
+                        });
+                    } else console.log("error: no such req with code: " + req);
+                });
+            })
+            res(conn);
+        }); ``
     }
 }
 
@@ -146,4 +154,5 @@ module.exports = {
     refetch: refetch,
     populateDb: populateDb,
     inputClass: inputClass,
+    gConn: gConn
 }
