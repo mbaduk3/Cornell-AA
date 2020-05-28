@@ -3,11 +3,11 @@ var router = express.Router();
 var db = require('../db/database')
 
 /* GET classes listing. */
-router.get('/', function(req, res, next) {
-
+router.get('/', async function(req, res, next) {
+  var conn = await db.gConn;
   var sql = 'select * from class'
   var params = []
-  db.conn.all(sql, params, (err, rows) => {
+  conn.all(sql, params, (err, rows) => {
     if (err) {
       res.status(400).json({"error":err.message});
       return;
