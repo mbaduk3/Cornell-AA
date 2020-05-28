@@ -1,0 +1,52 @@
+{
+  "majors": [
+    {
+      "id": "CS-ENG",
+      "collegereqs": [
+        "MATH_1910",
+        "MATH_1920",
+        "MATH_2930-40",
+        "PHYS_1112",
+        "PHYS_2213",
+        "CHEM_2080",
+        "CHEM_2090",
+        "CS_11XX",
+        "FWS_1",
+        "FWS_2",
+        "ENGRI",
+        "ENGRD",
+        "LS_1",
+        "LS_2",
+        "LS_3",
+        "LS_4",
+        "LS_5",
+        "LS_6",
+        "ADV_1",
+        "ADV_2"
+      ],
+      "majorreqs": [
+        "CS_2800",
+        "ENGRD_2110",
+        "CS_3110",
+        "CS_3410",
+        "CS_4410",
+        "CS_4820",
+        "CS_4XXX_1",
+        "CS_4XXX_2",
+        "CS_4XXX_3",
+        "CS_PROJ",
+        "EXT_1",
+        "EXT_2",
+        "EXT_3",
+        "TECHELECT_1",
+        "TECHELECT_2",
+        "TECHELECT_3",
+        "FREE"
+      ],
+      "satreqs": [
+        "ENGRC",
+        "PROB"
+      ]
+    }
+  ]
+}
