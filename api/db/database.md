@@ -24,7 +24,47 @@ will not necessarily be the same (ie. CS **1710** and COGST **1101** are the sam
 - `catalogSatisfiesReq`: ???
 - `acadCareer`: whether the course is for undergraduates, graduates, etc. 
 - `acadGroup`: divides courses among the different schools (Arts, Engineering). A single course may 
-fall under multiple academic groups. 
+fall under multiple academic groups.
+
+The possible values for `catalogBreadth` and `catalogDistr` include: 
+- BIO-AG
+- BIOLS-AG
+- BIONLS-AG
+- CA-AAP
+- CA-AG
+- CA-AS
+- CA-HE
+- CE-EN
+- D-AG
+- D-HE
+- FL-AAP
+- GB
+- GHB
+- HA-AAP
+- HA-AG
+- HA-AS
+- HA-HE
+- HB
+- KCP-AAP
+- KCM-AG
+- KCM-AS
+- KCM-HE
+- LA-AAP
+- LA-AG
+- LA-AS
+- LAD-HE
+- MQR-AAP
+- MQR-AS
+- MQR-HE
+- OPHLS-AG
+- PBS-AAP
+- PBS-AS 
+- PBS-HE
+- PBSS-AS
+- SBA-AAP
+- SBA-AG
+- SBA-AS
+- SBA-HE
 
 #
 

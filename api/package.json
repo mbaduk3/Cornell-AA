@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "test_db": "node ./db/test_db.js"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",

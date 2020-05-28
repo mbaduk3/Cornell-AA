@@ -5,6 +5,7 @@
 
 var sqlite3 = require('sqlite3').verbose()
 const https = require('https')
+const cornell_api = require('./cornell_roster.json')
 
 const DBSOURCE = "../api/db/db.sqlite"
 const rosterHost = "https://classes.cornell.edu"
@@ -26,6 +27,7 @@ let db = new sqlite3.Database(DBSOURCE, (err) => {
               .run(createTableReqSQL, err => err ? console.log(err) : null)
               .run(createTableClassReqSQL, err => err ? console.log(err) : null)
         });
+       populateDb();
     }
 });
 
@@ -55,6 +57,15 @@ const createTableClassReqSQL =
             ON UPDATE CASCADE ON DELETE CASCADE
     )` 
 
+/*
+    Populates the db with values which we know beforehand (such as reqs). 
+*/
+let populateDb = () => {
+    // Populate req with Cornell API reqs. 
+    let placeholders = cornell_api.reqs.map( _ => '(?)').join(',');
+    let populateReqSQL = 'INSERT INTO req(code) VALUES ' + placeholders;
+    db.run(populateReqSQL, cornell_api.reqs, err => err ? console.log(err) : null);
+}
 
 /* Example of populating all FA14 Math classes to our db. */
 const refetch = () => {
@@ -111,4 +122,8 @@ const inputClass = (db, cls, reqs) => {
 }
 
 
-module.exports = {refetch: refetch, db: db}
+module.exports = {
+    refetch: refetch,
+    db: db,
+    inputClass: inputClass,
+}
