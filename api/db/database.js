@@ -26,15 +26,16 @@ const openDb = new Promise((resolve, reject) => {
             conn.serialize(() => {
                 // Initialize tables
                 conn.parallelize(() => {
-                    conn.run(createTableClassSQL, err => err ? console.log(err) : console.log('class table created'))
-                        .run(createTableReqSQL, err => err ? console.log(err) : console.log('req table created'))
-                        .run(createTableClassReqSQL, err => err ? console.log(err) : console.log('class_req table created'))
+                    conn.run(createTableClassSQL, err => err ? console.log(err) : null /*console.log('class table created')*/)
+                        .run(createTableReqSQL, err => err ? console.log(err) : null /*console.log('req table created')*/)
+                        .run(createTableClassReqSQL, err => err ? console.log(err) : null /*console.log('class_req table created')*/)
                 });
                 conn.run("", () => resolve(conn));
             });
         }
     });
 });
+
 
 // SQL: Creates a `class` table. 
 const createTableClassSQL =
@@ -67,14 +68,16 @@ const createTableClassReqSQL =
 */
 const populateDb = async () => {
     conn = await openDb;
-    console.log('database opened')
-    // Populate req with Cornell API reqs. 
-    let placeholders = cornell_api.reqs.map(_ => '(?)').join(',');
-    let populateReqSQL = 'INSERT INTO req(code) VALUES ' + placeholders;
-    conn.run(populateReqSQL, cornell_api.reqs, err => {
-        if (err) throw err;
-    });
-    return conn;
+    return new Promise((res, rej) => {
+        // Populate req with Cornell API reqs. 
+        let placeholders = cornell_api.reqs.map(_ => '(?)').join(',');
+        let populateReqSQL = 'INSERT INTO req(code) VALUES ' + placeholders;
+        conn.run(populateReqSQL, cornell_api.reqs, err => {
+            if (err) throw err;
+            console.log("db populated")
+            res(conn);
+        });
+    })
 }
 
 
@@ -108,7 +111,7 @@ const refetch = () => {
     Throws an error if the class with given [crseId] already exists in db. 
 */
 const inputClass = async (cls, reqs) => {
-    var conn = await openDb;
+    var conn = await openDb; // Wait till db initialized.  
     let insertClassSQL = `INSERT INTO class (course_id, name) VALUES (?, ?)`
     let insertClassVals = [cls.crseId, cls.titleShort]
     conn.run(insertClassSQL, insertClassVals, function (err) {

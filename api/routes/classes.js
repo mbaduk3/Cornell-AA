@@ -1,12 +1,13 @@
 var express = require('express');
 var router = express.Router();
-var db = require('../db/database').db
+var db = require('../db/database')
 
 /* GET classes listing. */
 router.get('/', function(req, res, next) {
+
   var sql = 'select * from class'
   var params = []
-  db.all(sql, params, (err, rows) => {
+  db.conn.all(sql, params, (err, rows) => {
     if (err) {
       res.status(400).json({"error":err.message});
       return;

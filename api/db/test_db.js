@@ -11,10 +11,20 @@ const test1 = () => {
     }    
     database.inputClass(exClass, []);
 }
+const test2 = () => {
+    exClass = {
+        crseId: 12345,
+        titleShort: "Intro to Python",
+        catalogBreadth: "HA-AS",
+        catalogDistr: "MQR-AS"
+    }    
+    database.inputClass(exClass, []);
+}
 
 const executeTests = () => {
     console.log("executing tests");
     test1();
+    test2();
 }
 
 executeTests();
