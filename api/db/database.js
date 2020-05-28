@@ -1,52 +1,57 @@
 /* 
-    Initilizes local database.
+    Initializes local database.
     Based on: https://developerhowto.com/2018/12/29/build-a-rest-api-with-node-js-and-express-js/
 */
 
-var sqlite3 = require('sqlite3').verbose()
+const sqlite3 = require('sqlite3').verbose()
 const https = require('https')
 const cornell_api = require('./cornell_roster.json')
 
 const DBSOURCE = "../api/db/db.sqlite"
 const rosterHost = "https://classes.cornell.edu"
 
-
 /*
-    Opens the connection to our database. Creates the db file if one does not
+    Opens a connection to the database. Creates the db file if one does not
     already exist, and generates empty tables. 
+    Resolve this promise to use the db connection.  
 */
-let db = new sqlite3.Database(DBSOURCE, (err) => {
-    if (err) { // Cannot open database
-      console.error(err.message)
-      throw err
-    } else {
-        db.get("PRAGMA foreign_keys = ON")
-        console.log('Connected to the SQLite database.')
-        db.serialize(() => {
-            db.run(createTableClassSQL, err => err ? console.log(err) : null)
-              .run(createTableReqSQL, err => err ? console.log(err) : null)
-              .run(createTableClassReqSQL, err => err ? console.log(err) : null)
-        });
-       populateDb();
-    }
+const openDb = new Promise((resolve, reject) => {
+    let conn = new sqlite3.Database(DBSOURCE, (err) => {
+        if (err) { // Cannot open database
+            console.error(err.message)
+            throw err
+        } else {
+            conn.get("PRAGMA foreign_keys = ON")
+            console.log('Connected to the SQLite database.')
+            conn.serialize(() => {
+                // Initialize tables
+                conn.parallelize(() => {
+                    conn.run(createTableClassSQL, err => err ? console.log(err) : console.log('class table created'))
+                        .run(createTableReqSQL, err => err ? console.log(err) : console.log('req table created'))
+                        .run(createTableClassReqSQL, err => err ? console.log(err) : console.log('class_req table created'))
+                });
+                conn.run("", () => resolve(conn));
+            });
+        }
+    });
 });
 
 // SQL: Creates a `class` table. 
-const createTableClassSQL = 
+const createTableClassSQL =
     `CREATE TABLE IF NOT EXISTS class (
         course_id INTEGER PRIMARY KEY NOT NULL, 
         name TEXT NOT NULL
-    )` 
+    )`
 
 // SQL: Creates a `req` table.
-const createTableReqSQL = 
+const createTableReqSQL =
     `CREATE TABLE IF NOT EXISTS req (
         req_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, 
         code TEXT NOT NULL
-    )` 
+    )`
 
 // SQL: Creates a `class_req` table.
-const createTableClassReqSQL = 
+const createTableClassReqSQL =
     `CREATE TABLE IF NOT EXISTS class_req (
         course_id INTEGER NOT NULL, 
         req_id INTEGER NOT NULL, 
@@ -55,17 +60,23 @@ const createTableClassReqSQL =
             ON UPDATE CASCADE ON DELETE CASCADE,
         FOREIGN KEY (req_id) REFERENCES req(req_id)
             ON UPDATE CASCADE ON DELETE CASCADE
-    )` 
+    )`
 
 /*
     Populates the db with values which we know beforehand (such as reqs). 
 */
-let populateDb = () => {
+const populateDb = async () => {
+    conn = await openDb;
+    console.log('database opened')
     // Populate req with Cornell API reqs. 
-    let placeholders = cornell_api.reqs.map( _ => '(?)').join(',');
+    let placeholders = cornell_api.reqs.map(_ => '(?)').join(',');
     let populateReqSQL = 'INSERT INTO req(code) VALUES ' + placeholders;
-    db.run(populateReqSQL, cornell_api.reqs, err => err ? console.log(err) : null);
+    conn.run(populateReqSQL, cornell_api.reqs, err => {
+        if (err) throw err;
+    });
+    return conn;
 }
+
 
 /* Example of populating all FA14 Math classes to our db. */
 const refetch = () => {
@@ -82,7 +93,7 @@ const refetch = () => {
                 inputClass(resJson.data.classes[i], []);
             }
         })
-        
+
     }).on("error", (err) => console.error(err));
 }
 
@@ -96,34 +107,40 @@ const refetch = () => {
     Requires: all requirements are already defined in `req` table. 
     Throws an error if the class with given [crseId] already exists in db. 
 */
-const inputClass = (db, cls, reqs) => {
+const inputClass = async (cls, reqs) => {
+    var conn = await openDb;
     let insertClassSQL = `INSERT INTO class (course_id, name) VALUES (?, ?)`
     let insertClassVals = [cls.crseId, cls.titleShort]
-    let courseId = db.run(insertClassSQL, insertClassVals, function(err) {
+    conn.run(insertClassSQL, insertClassVals, function (err) {
         if (err) { throw err }
-        return this.lastID;
+        console.log(`inserted class ${cls.titleShort}, id=${this.lastID}`);
+        insertReqs(this.lastID);
     })
     let reqLst = [
-        cls.catalogBreadth, 
+        cls.catalogBreadth,
         cls.catalogDistr,
         ...reqs
     ]
-    reqLst.forEach(req => {
-        let reqSQL = `SELECT (req_id) FROM req WHERE code = ?`
-        let reqId = db.get(reqSQL, [req], (err, row) => {
-            if (err) { return console.log(err) }
-            return row ? row.req_id : console.log("error: no such req with code: " + req);
+    const insertReqs = (courseId) => {
+        reqLst.forEach(req => {
+            let reqSQL = `SELECT (req_id) FROM req WHERE code = (?)`
+            conn.get(reqSQL, [req], (err, row) => {
+                if (err) { throw err }
+                if (row) {
+                    let insertClassReqSQL = `INSERT INTO class_req (course_id, req_id) VALUES (?, ?)`
+                    conn.serialize(() => {
+                        conn.run(insertClassReqSQL, [courseId, row.req_id], (err) => {
+                            if (err) { throw err }
+                        })
+                    });
+                } else console.log("error: no such req with code: " + req);
+            });
         })
-        let insertClassReqSQL = `INSERT INTO class_req (course_id, req_id) VALUES (?, ?)`
-        db.run(insertClassReqSQL, [courseId, reqId], (err) => {
-            if (err) { throw err }
-        })
-    })
+    }
 }
-
 
 module.exports = {
     refetch: refetch,
-    db: db,
+    populateDb: populateDb,
     inputClass: inputClass,
 }
